@@ -1,12 +1,16 @@
 import { urlStream } from '~/utils/url'
 
+const cachesAvailable = typeof window !== 'undefined' && !!window.caches
+
 export const getCache = async (cacheName, key) => {
+	if (!cachesAvailable) return null
 	const caches = await window.caches.open(cacheName)
 	if (!caches) return null
 	return await caches.match(key)
 }
 
 export const clearCache = async () => {
+	if (!cachesAvailable) return
 	const keys = [
 		'api',
 		'coverArt',
@@ -20,10 +24,12 @@ export const clearCache = async () => {
 }
 
 export const clearSongCache = async () => {
+	if (!cachesAvailable) return
 	await window.caches.delete('song')
 }
 
 export const getStatCache = async () => {
+	if (!cachesAvailable) return []
 	const caches = await window.caches.keys()
 	const stats = []
 	for (const name of caches) {
@@ -60,6 +66,7 @@ export const getSongCachedInfo = async (config, songId, streamFormat, maxBitrate
 }
 
 export const deleteSongCache = async (config, songId, streamFormat, maxBitrate) => {
+	if (!cachesAvailable) return
 	const url = urlStream(config, songId, streamFormat, maxBitrate)
 
 	await window.caches.open('song')

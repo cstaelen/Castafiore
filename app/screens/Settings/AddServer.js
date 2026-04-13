@@ -20,6 +20,7 @@ import OptionInput from '~/components/settings/OptionInput'
 import Player from '~/utils/player'
 import settingStyles from '~/styles/settings'
 import size from '~/styles/size'
+import { IS_DOCKER_HEADLESS } from '../../utils/player.web'
 
 const AddServer = ({ navigation }) => {
 	const { t } = useTranslation()
@@ -56,7 +57,7 @@ const AddServer = ({ navigation }) => {
 			query = `u=${encodeURI(username)}&t=${md5(password + salt)}&s=${salt}&v=1.16.1&c=castafiore`
 		}
 
-		if (Platform.OS !== 'android' && uri.startsWith('http://')) {
+		if (!IS_DOCKER_HEADLESS && Platform.OS !== 'android' && uri.startsWith('http://')) {
 			setError('Only https is allowed')
 			return
 		}

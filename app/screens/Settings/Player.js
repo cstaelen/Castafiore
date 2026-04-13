@@ -11,7 +11,6 @@ import Header from '~/components/Header'
 import mainStyles from '~/styles/main'
 import SelectItem from '~/components/settings/SelectItem'
 import settingStyles from '~/styles/settings'
-
 const FORMATS = [
 	{ name: 'Raw', value: 'raw' },
 	{ name: 'MP3', value: 'mp3' },

@@ -67,7 +67,10 @@
         "Max bitrate description": "Spécifiez le débit maximal en kilobits par seconde pour le flux à lire. Des débits plus bas consommeront moins de données mais peuvent entraîner une qualité audio inférieure.",
         "Play seed first": "Lire la référence en premier",
         "Save last queue": "Sauvegarder la dernière file",
-        "Save last queue Description": "Sauvegarder automatiquement la dernière file que vous avez jouée. Vous pouvez activer la section 'Dernière file' sur la page d'accueil pour y accéder."
+        "Save last queue Description": "Sauvegarder automatiquement la dernière file que vous avez jouée. Vous pouvez activer la section 'Dernière file' sur la page d'accueil pour y accéder.",
+        "Output": "Sortie audio",
+        "Local": "Local",
+        "Remote": "Distant"
       },
       "theme": {
         "Player Theme": "Thème du lecteur"
