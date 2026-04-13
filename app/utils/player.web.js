@@ -7,10 +7,13 @@ import { urlStream, urlCover } from './url'
 import { nextRandomIndex, prevRandomIndex, saveQueue } from '~/utils/tools'
 import State from '~/utils/playerState'
 import logger from '~/utils/logger'
+import * as HeadlessPlayer from '~/utils/player/playerHeadless'
 
-const audio = () => {
-	return document.getElementById('audio')
-}
+const IS_HEADLESS = !!process.env.EXPO_PUBLIC_UPNP_PORT
+
+// --- Local player (HTML audio) ---
+
+const audio = () => document.getElementById('audio')
 
 export const initService = async () => {
 	serviceWorkerRegistration.register()
@@ -18,11 +21,18 @@ export const initService = async () => {
 
 export const initPlayer = async (songDispatch) => {
 	const song = await AsyncStorage.getItem('song')
-		.then((song) => song ? JSON.parse(song) : null)
-	const sound = audio()
+		.then((s) => s ? JSON.parse(s) : null)
+
 	global.isVolumeSupported = false
 	songDispatch({ type: 'init' })
 	if (song) songDispatch({ type: 'restore', song, isSongLoad: false })
+
+	if (IS_HEADLESS) {
+		await HeadlessPlayer.initPlayer(songDispatch)
+		return
+	}
+
+	const sound = audio()
 
 	sound.addEventListener('error', () => {
 		songDispatch({ type: 'setState', state: State.Error })
@@ -65,7 +75,6 @@ export const initPlayer = async (songDispatch) => {
 		if (global.song.actionEndOfSong === 'repeat') {
 			if (audio().duration < 1) {
 				reload()
-				// This return is necessary to avoid scrobble if a bug occurs
 				return
 			} else {
 				setPosition(0)
@@ -130,9 +139,13 @@ export const initPlayer = async (songDispatch) => {
 	})
 }
 
-export const useEvent = (_song, _songDispatch) => { }
+export const useEvent = (song, songDispatch) => {
+	if (IS_HEADLESS) HeadlessPlayer.useEvent(song, songDispatch, nextSong)
+}
 
 export const updateTime = () => {
+	if (IS_HEADLESS) return HeadlessPlayer.updateTime()
+
 	const [time, setTime] = React.useState({
 		position: audio().currentTime,
 		duration: audio().duration,
@@ -158,9 +171,7 @@ export const updateTime = () => {
 	return time
 }
 
-export const downloadSong = async (url, _id) => {
-	return fetch(url)
-}
+export const downloadSong = async (url, _id) => fetch(url)
 
 const downloadNextSong = async (config, queue, currentIndex) => {
 	if (!global.isSongCaching) return
@@ -179,6 +190,8 @@ const downloadNextSong = async (config, queue, currentIndex) => {
 export const unloadSong = async () => { }
 
 const loadSong = async (config, queue, index) => {
+	if (IS_HEADLESS) return HeadlessPlayer.loadSong(config, queue, index)
+
 	const song = queue[index]
 	const sound = audio()
 
@@ -208,54 +221,52 @@ export const playSong = async (config, songDispatch, queue, index) => {
 
 export const setIndex = async (config, songDispatch, queue, index) => {
 	if (queue && index >= 0 && index < queue.length) {
-		unloadSong()
 		await loadSong(config, queue, index)
 		songDispatch({ type: 'setIndex', index })
 	}
 }
 
 export const nextSong = async (config, song, songDispatch) => {
-	if (song.queue) {
-		if (song.actionEndOfSong === 'random') await setIndex(config, songDispatch, song.queue, nextRandomIndex())
-		else {
-			if (!global.repeatQueue && song.index === song.queue.length - 1) return
-			await setIndex(config, songDispatch, song.queue, (song.index + 1) % song.queue.length)
-		}
-		if (song.actionEndOfSong === 'repeat') await setRepeat(songDispatch, 'next')
+	if (!song.queue) return
+	if (song.actionEndOfSong === 'random') await setIndex(config, songDispatch, song.queue, nextRandomIndex())
+	else {
+		if (!global.repeatQueue && song.index === song.queue.length - 1) return
+		await setIndex(config, songDispatch, song.queue, (song.index + 1) % song.queue.length)
 	}
+	if (song.actionEndOfSong === 'repeat') await setRepeat(songDispatch, 'next')
 }
 
 export const previousSong = async (config, song, songDispatch) => {
-	if (song.queue) {
-		if (song.actionEndOfSong === 'random') await setIndex(config, songDispatch, song.queue, prevRandomIndex())
-		else {
-			if (!global.repeatQueue && song.index === 0) return
-			await setIndex(config, songDispatch, song.queue, (song.queue.length + song.index - 1) % song.queue.length)
-		}
-		if (song.actionEndOfSong === 'repeat') await setRepeat(songDispatch, 'next')
+	if (!song.queue) return
+	if (song.actionEndOfSong === 'random') await setIndex(config, songDispatch, song.queue, prevRandomIndex())
+	else {
+		if (!global.repeatQueue && song.index === 0) return
+		await setIndex(config, songDispatch, song.queue, (song.queue.length + song.index - 1) % song.queue.length)
 	}
+	if (song.actionEndOfSong === 'repeat') await setRepeat(songDispatch, 'next')
 }
 
-export const reload = async () => {
-	audio().load()
-}
+export const reload = async () => { if (!IS_HEADLESS) audio().load() }
 
 export const pauseSong = async () => {
+	if (IS_HEADLESS) return HeadlessPlayer.pauseSong()
 	audio().pause()
 }
 
 export const resumeSong = async () => {
+	if (IS_HEADLESS) return HeadlessPlayer.resumeSong()
 	audio().play()
 }
 
 export const stopSong = async () => {
+	if (IS_HEADLESS) return HeadlessPlayer.stopSong()
 	audio().pause()
 }
 
 export const setPosition = async (position) => {
+	if (IS_HEADLESS) return HeadlessPlayer.setPosition(position)
 	if (position === Infinity) return
 	const sound = audio()
-
 	if (position < 0) position = 0
 	if (position > sound.duration) position = sound.duration
 	if (!sound.duration || position < 0) position = 0
@@ -263,12 +274,14 @@ export const setPosition = async (position) => {
 }
 
 export const setVolume = async (volume) => {
+	if (IS_HEADLESS) return HeadlessPlayer.setVolume(volume)
 	if (volume > 1) volume = 1
 	if (volume < 0) volume = 0
 	audio().volume = volume
 }
 
 export const getVolume = () => {
+	if (IS_HEADLESS) return 1
 	return audio().volume
 }
 
@@ -276,6 +289,7 @@ export const updateVolume = () => {
 	const [volume, setVol] = React.useState(getVolume())
 
 	React.useEffect(() => {
+		if (IS_HEADLESS) return
 		const sound = audio()
 		const volumeChangeHandler = () => {
 			setVol(sound.volume)
@@ -297,6 +311,7 @@ export const secondToTime = (second) => {
 }
 
 export const tuktuktuk = (_songDispatch) => {
+	if (IS_HEADLESS) return
 	const sound = new Audio()
 	sound.src = 'https://sawyerf.github.io/tuktuktuk.mp3'
 	sound.addEventListener('loadedmetadata', () => {
@@ -312,10 +327,12 @@ export const setRepeat = async (songdispatch, action) => {
 }
 
 export const isVolumeSupported = () => {
+	if (IS_HEADLESS) return false
 	return global.isVolumeSupported
 }
 
 export const resetAudio = (songDispatch) => {
+	if (IS_HEADLESS) return HeadlessPlayer.resetAudio(songDispatch)
 	songDispatch({ type: 'reset' })
 	const sound = audio()
 	sound.src = ''
@@ -324,11 +341,25 @@ export const resetAudio = (songDispatch) => {
 	sound.currentTime = 0
 }
 
+export const saveState = async () => {
+	if (IS_HEADLESS) return HeadlessPlayer.saveState()
+	const sound = audio()
+	return {
+		position: sound.currentTime || 0,
+		isPlaying: !sound.paused,
+	}
+}
+
+export const restoreState = async (state) => {
+	if (!state) return
+	if (state.position > 0) await setPosition(state.position)
+	if (state.isPlaying) await resumeSong()
+}
+
 export const removeFromQueue = async (songDispatch, index) => {
 	songDispatch({ type: 'removeFromQueue', index })
 }
 
-// when index is null, add to the end of the queue
 export const addToQueue = (songDispatch, track, index = null) => {
 	songDispatch({ type: 'addToQueue', track, index })
 }
@@ -357,5 +388,7 @@ export default {
 	addToQueue,
 	removeFromQueue,
 	setIndex,
+	saveState,
+	restoreState,
 	State,
 }

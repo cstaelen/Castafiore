@@ -49,6 +49,8 @@ const AddServer = ({ navigation }) => {
 		setUrl(uri)
 		const salt = Math.random().toString(36).substring(2, 15)
 
+		const isHeadless = !!process.env.EXPO_PUBLIC_UPNP_PORT
+
 		let query
 		if (lowSecurity) {
 			query = `u=${encodeURI(username)}&p=${encodeURI(password)}&v=1.16.1&c=castafiore`
@@ -56,7 +58,7 @@ const AddServer = ({ navigation }) => {
 			query = `u=${encodeURI(username)}&t=${md5(password + salt)}&s=${salt}&v=1.16.1&c=castafiore`
 		}
 
-		if (Platform.OS !== 'android' && uri.startsWith('http://')) {
+		if (!isHeadless && Platform.OS !== 'android' && uri.startsWith('http://')) {
 			setError('Only https is allowed')
 			return
 		}
