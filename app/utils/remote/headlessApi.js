@@ -12,6 +12,9 @@ export const configureBaseUrl = (fn) => {
 	getBaseUrl = fn
 }
 
+const isHeadlessActive = () => global.playerType === 'headless' || global.webPlayerType === 'headless'
+export const isMpdActive = (status) => status.state === 'play' || status.state === 'pause'
+
 const api = async (method, endpoint, body) => {
 	const res = await fetch(`${getBaseUrl()}/api${endpoint}`, {
 		method,
@@ -45,9 +48,7 @@ const startPolling = (songDispatch, nextSong) => {
 			const status = await api('GET', '/status')
 			notifyVolume(status.volume / 100)
 
-			// Only dispatch state to React context when headless is the active player
-			const isHeadlessActive = global.playerType === 'headless' || global.webPlayerType === 'headless'
-			if (!isHeadlessActive) return
+			if (!isHeadlessActive()) return
 
 			if (!global.song?.songInfo) return
 			const state = status.state === 'play' ? State.Playing
@@ -87,6 +88,7 @@ const stopPolling = () => {
 }
 
 export const initPlayer = async (songDispatch) => {
+	if (!isHeadlessActive()) return
 	try {
 		const status = await api('GET', '/status')
 		if (status.track && status.songPos >= 0) {
@@ -97,8 +99,8 @@ export const initPlayer = async (songDispatch) => {
 				actionEndOfSong: 'next',
 				randomIndex: [],
 			}
-			songDispatch({ type: 'restore', song, isSongLoad: status.state === 'play' || status.state === 'pause' })
-			if (status.state === 'play' || status.state === 'pause') {
+			songDispatch({ type: 'restore', song, isSongLoad: isMpdActive(status) })
+			if (isMpdActive(status)) {
 				songDispatch({ type: 'setState', state: status.state === 'play' ? State.Playing : State.Paused })
 			}
 		}
