@@ -46,7 +46,8 @@ const startPolling = (songDispatch, nextSong) => {
 			notifyVolume(status.volume / 100)
 
 			// Only dispatch state to React context when headless is the active player
-			if (global.playerType !== 'headless' && global.webPlayerType !== 'headless') return
+			const isHeadlessActive = global.playerType === 'headless' || global.webPlayerType === 'headless'
+			if (!isHeadlessActive) return
 
 			if (!global.song?.songInfo) return
 			const state = status.state === 'play' ? State.Playing
