@@ -4,6 +4,8 @@ import { urlStream } from '~/utils/url'
 import State from '~/utils/playerState'
 import logger from '~/utils/logger'
 
+export const HEADLESS_DEVICE = { id: 'castafiore-connect', name: 'Castafiore Connect', type: 'headless' }
+
 let getBaseUrl = null
 
 export const configureBaseUrl = (fn) => {
@@ -42,6 +44,10 @@ const startPolling = (songDispatch, nextSong) => {
 		try {
 			const status = await api('GET', '/status')
 			notifyVolume(status.volume / 100)
+
+			// Only dispatch state to React context when headless is the active player
+			if (global.playerType !== 'headless' && global.webPlayerType !== 'headless') return
+
 			if (!global.song?.songInfo) return
 			const state = status.state === 'play' ? State.Playing
 				: status.state === 'pause' ? State.Paused
@@ -96,7 +102,7 @@ export const initPlayer = async (songDispatch) => {
 			}
 		}
 	} catch (e) {
-		logger.error('PlayerHeadless initPlayer', e.message)
+		logger.error('PlayerHeadless', 'initPlayer:', e.message)
 	}
 }
 
@@ -156,9 +162,11 @@ export const updateVolume = () => {
 	return volume
 }
 
+export const fetchStatus = () => api('GET', '/status')
+
 export const saveState = async () => {
 	try {
-		const status = await api('GET', '/status')
+		const status = await fetchStatus()
 		return { position: status.elapsed || 0, isPlaying: status.state === 'play' }
 	} catch {
 		return { position: 0, isPlaying: false }
@@ -172,8 +180,14 @@ export const resetAudio = (songDispatch) => {
 
 export const isVolumeSupported = () => true
 export const connect = async (_device) => { }
-export const disconnect = async (_device) => { }
+export const disconnect = async (_device) => {
+	prevState = null
+	await api('POST', '/stop').catch(() => { })
+	await api('POST', '/clear').catch(() => { })
+}
+export const clearQueue = async () => api('POST', '/clear')
 export const downloadSong = async () => { }
+export const downloadNextSong = async () => { }
 export const unloadSong = async () => { }
 export const tuktuktuk = async () => { }
 export const reload = async () => { }
@@ -196,7 +210,10 @@ export default {
 	connect,
 	disconnect,
 	downloadSong,
+	downloadNextSong,
 	unloadSong,
 	tuktuktuk,
 	reload,
+	clearQueue,
+	fetchStatus,
 }

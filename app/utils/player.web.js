@@ -9,8 +9,10 @@ export const IS_DOCKER_HEADLESS = !!process.env.EXPO_PUBLIC_IS_HEADLESS
 const getPlayer = () => global.webPlayerType === 'headless' ? HeadlessPlayer : LocalPlayer
 
 export const switchPlayer = async (type) => {
+	const prev = getPlayer()
 	global.webPlayerType = type
-	await AsyncStorage.setItem('webPlayerType', type)
+	AsyncStorage.setItem('webPlayerType', type)
+	if (prev !== getPlayer()) await prev.disconnect?.()
 }
 
 export const initService = async () => {
