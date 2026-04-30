@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import { nextRandomIndex, prevRandomIndex, saveQueue } from '~/utils/tools'
 import LocalPlayer from '~/utils/player/playerLocal'
 import * as HeadlessPlayer from '~/utils/player/playerHeadless'
+import { resetPollingState } from '~/utils/remote/headlessApi'
 import State from '~/utils/playerState'
 
 export const IS_DOCKER_HEADLESS = !!process.env.EXPO_PUBLIC_IS_HEADLESS
@@ -12,6 +13,7 @@ export const switchPlayer = async (type) => {
 	const prev = getPlayer()
 	global.webPlayerType = type
 	AsyncStorage.setItem('webPlayerType', type)
+	resetPollingState()
 	if (prev !== getPlayer()) await prev.disconnect?.()
 }
 

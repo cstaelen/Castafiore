@@ -4,8 +4,6 @@ import { urlStream } from '~/utils/url'
 import State from '~/utils/playerState'
 import logger from '~/utils/logger'
 
-export const HEADLESS_DEVICE = { id: 'castafiore-connect', name: 'Castafiore Connect', type: 'headless' }
-
 let getBaseUrl = null
 
 export const configureBaseUrl = (fn) => {
@@ -81,10 +79,15 @@ const startPolling = (songDispatch, nextSong) => {
 	}, 1000)
 }
 
+export const resetPollingState = () => {
+	prevState = null
+	currentProgress = { position: 0, duration: 0 }
+}
+
 const stopPolling = () => {
 	clearInterval(statusInterval)
 	statusInterval = null
-	prevState = null
+	resetPollingState()
 }
 
 export const initPlayer = async (songDispatch) => {
@@ -113,7 +116,7 @@ export const useEvent = (_song, songDispatch, nextSong) => {
 	React.useEffect(() => {
 		startPolling(songDispatch, nextSong)
 		return () => stopPolling()
-	}, [songDispatch])
+	}, [])
 }
 
 export const loadSong = async (config, queue, index) => {
@@ -135,7 +138,6 @@ export const setPosition = async (position) => {
 
 export const setVolume = async (volume) => {
 	volume = Math.max(0, Math.min(1, volume))
-	global.headlessVolume = volume
 	await api('POST', '/volume', { volume })
 }
 
@@ -165,7 +167,7 @@ export const updateVolume = () => {
 	return volume
 }
 
-export const fetchStatus = () => api('GET', '/status')
+const fetchStatus = () => api('GET', '/status')
 
 export const saveState = async () => {
 	try {
@@ -182,15 +184,12 @@ export const resetAudio = (songDispatch) => {
 }
 
 export const isVolumeSupported = () => true
-export const connect = async (_device) => { }
-export const disconnect = async (_device) => {
+export const disconnect = async () => {
 	prevState = null
 	await api('POST', '/stop').catch(() => { })
 	await api('POST', '/clear').catch(() => { })
 }
-export const clearQueue = async () => api('POST', '/clear')
 export const downloadSong = async () => { }
-export const downloadNextSong = async () => { }
 export const unloadSong = async () => { }
 export const tuktuktuk = async () => { }
 export const reload = async () => { }
@@ -210,13 +209,9 @@ export default {
 	saveState,
 	resetAudio,
 	isVolumeSupported,
-	connect,
 	disconnect,
 	downloadSong,
-	downloadNextSong,
 	unloadSong,
 	tuktuktuk,
 	reload,
-	clearQueue,
-	fetchStatus,
 }
