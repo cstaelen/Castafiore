@@ -4,7 +4,7 @@ import * as serviceWorkerRegistration from '~/services/serviceWorkerRegistration
 
 import { getApi } from '~/utils/api'
 import { urlStream, urlCover } from '~/utils/url'
-import { nextRandomIndex, prevRandomIndex, saveQueue } from '~/utils/tools'
+import { nextRandomIndex, prevRandomIndex } from '~/utils/tools'
 import State from '~/utils/playerState'
 import logger from '~/utils/logger'
 
@@ -199,13 +199,6 @@ export const loadSong = async (config, queue, index) => {
 	})
 }
 
-export const playSong = async (config, songDispatch, queue, index) => {
-	await loadSong(config, queue, index)
-	songDispatch({ type: 'setQueue', queue, index })
-	setRepeat(songDispatch, 'next')
-	saveQueue(config, queue, index)
-}
-
 export const setIndex = async (config, songDispatch, queue, index) => {
 	if (queue && index >= 0 && index < queue.length) {
 		unloadSong()
@@ -214,25 +207,21 @@ export const setIndex = async (config, songDispatch, queue, index) => {
 	}
 }
 
-export const nextSong = async (config, song, songDispatch) => {
-	if (song.queue) {
-		if (song.actionEndOfSong === 'random') await setIndex(config, songDispatch, song.queue, nextRandomIndex())
-		else {
-			if (!global.repeatQueue && song.index === song.queue.length - 1) return
-			await setIndex(config, songDispatch, song.queue, (song.index + 1) % song.queue.length)
-		}
-		if (song.actionEndOfSong === 'repeat') await setRepeat(songDispatch, 'next')
+const nextSong = async (config, song, songDispatch) => {
+	if (!song.queue) return
+	if (song.actionEndOfSong === 'random') await setIndex(config, songDispatch, song.queue, nextRandomIndex())
+	else {
+		if (!global.repeatQueue && song.index === song.queue.length - 1) return
+		await setIndex(config, songDispatch, song.queue, (song.index + 1) % song.queue.length)
 	}
 }
 
-export const previousSong = async (config, song, songDispatch) => {
-	if (song.queue) {
-		if (song.actionEndOfSong === 'random') await setIndex(config, songDispatch, song.queue, prevRandomIndex())
-		else {
-			if (!global.repeatQueue && song.index === 0) return
-			await setIndex(config, songDispatch, song.queue, (song.queue.length + song.index - 1) % song.queue.length)
-		}
-		if (song.actionEndOfSong === 'repeat') await setRepeat(songDispatch, 'next')
+const previousSong = async (config, song, songDispatch) => {
+	if (!song.queue) return
+	if (song.actionEndOfSong === 'random') await setIndex(config, songDispatch, song.queue, prevRandomIndex())
+	else {
+		if (!global.repeatQueue && song.index === 0) return
+		await setIndex(config, songDispatch, song.queue, (song.queue.length + song.index - 1) % song.queue.length)
 	}
 }
 
@@ -290,12 +279,6 @@ export const updateVolume = () => {
 	return volume
 }
 
-export const secondToTime = (second) => {
-	if (!second) return '00:00'
-	if (second === Infinity) return '∞:∞'
-	return `${String((second - second % 60) / 60).padStart(2, '0')}:${String((second - second % 1) % 60).padStart(2, '0')}`
-}
-
 export const tuktuktuk = (_songDispatch) => {
 	const sound = new Audio()
 	sound.src = 'https://sawyerf.github.io/tuktuktuk.mp3'
@@ -305,10 +288,6 @@ export const tuktuktuk = (_songDispatch) => {
 	sound.addEventListener('ended', () => {
 		sound.src = ''
 	})
-}
-
-export const setRepeat = async (songdispatch, action) => {
-	await songdispatch({ type: 'setActionEndOfSong', action })
 }
 
 export const isVolumeSupported = () => {
@@ -332,29 +311,11 @@ export const saveState = async () => {
 	}
 }
 
-export const restoreState = async (state) => {
-	if (!state) return
-	if (state.position > 0) await setPosition(state.position)
-	if (state.isPlaying) await resumeSong()
-}
-
-export const removeFromQueue = async (songDispatch, index) => {
-	songDispatch({ type: 'removeFromQueue', index })
-}
-
-// when index is null, add to the end of the queue
-export const addToQueue = (songDispatch, track, index = null) => {
-	songDispatch({ type: 'addToQueue', track, index })
-}
-
 export default {
 	initService,
 	initPlayer,
 	useEvent,
 	updateTime,
-	playSong,
-	nextSong,
-	previousSong,
 	pauseSong,
 	resumeSong,
 	stopSong,
@@ -363,16 +324,11 @@ export default {
 	getVolume,
 	isVolumeSupported,
 	updateVolume,
-	secondToTime,
 	tuktuktuk,
-	setRepeat,
 	reload,
 	resetAudio,
-	addToQueue,
-	removeFromQueue,
 	setIndex,
 	loadSong,
 	saveState,
-	restoreState,
 	State,
 }

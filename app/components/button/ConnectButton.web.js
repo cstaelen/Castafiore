@@ -9,7 +9,7 @@ import { useSong, useSongDispatch } from '~/contexts/song'
 import IconButton from '~/components/button/IconButton'
 import SlideBar from '~/components/button/SlideBar'
 import Player from '~/utils/player'
-import { IS_DOCKER_HEADLESS } from '../../utils/player.web'
+import { IS_DOCKER_HEADLESS } from '~/utils/player.web'
 
 const ConnectButton = ({ size = 23, color = null, style = {} }) => {
 	const { t } = useTranslation()

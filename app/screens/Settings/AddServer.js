@@ -20,7 +20,7 @@ import OptionInput from '~/components/settings/OptionInput'
 import Player from '~/utils/player'
 import settingStyles from '~/styles/settings'
 import size from '~/styles/size'
-import { IS_DOCKER_HEADLESS } from '../../utils/player.web'
+import { IS_DOCKER_HEADLESS } from '~/utils/player.web'
 
 const AddServer = ({ navigation }) => {
 	const { t } = useTranslation()

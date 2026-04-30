@@ -12,7 +12,7 @@ export const configureBaseUrl = (fn) => {
 	getBaseUrl = fn
 }
 
-const isHeadlessActive = () => global.playerType === 'headless' || global.webPlayerType === 'headless'
+const isHeadlessActive = () => global.webPlayerType === 'headless'
 export const isMpdActive = (status) => status.state === 'play' || status.state === 'pause'
 
 const api = async (method, endpoint, body) => {

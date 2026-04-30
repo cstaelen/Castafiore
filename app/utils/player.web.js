@@ -30,14 +30,10 @@ export const initPlayer = async (songDispatch) => {
 }
 
 export const useEvent = (song, songDispatch) => {
-	if (global.webPlayerType === 'headless') HeadlessPlayer.useEvent(song, songDispatch, nextSong)
+	HeadlessPlayer.useEvent(song, songDispatch, nextSong)
 }
 
-export const updateTime = () => {
-	const localTime = LocalPlayer.updateTime()
-	const headlessTime = HeadlessPlayer.updateTime()
-	return global.webPlayerType === 'headless' ? headlessTime : localTime
-}
+export const updateTime = () => getPlayer().updateTime()
 
 export const downloadSong = async (url, _id) => fetch(url)
 
