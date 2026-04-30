@@ -94,6 +94,8 @@ const startPolling = (songDispatch, nextSong) => {
 const stopPolling = () => {
 	clearInterval(statusInterval)
 	statusInterval = null
+	prevState = null
+	currentProgress = { position: 0, duration: 0 }
 }
 
 export const initPlayer = async (songDispatch) => {
