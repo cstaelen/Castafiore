@@ -82,6 +82,7 @@ const startPolling = (songDispatch, nextSong) => {
 			if (!global.song?.songInfo) return
 
 			notifyProgress(status.elapsed || 0, status.duration || 0)
+
 			await syncTrack(status, songDispatch)
 			await syncState(status, songDispatch, nextSong)
 		} catch (e) {
