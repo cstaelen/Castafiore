@@ -87,10 +87,13 @@ const stopPolling = () => {
 export const initPlayer = async (songDispatch) => {
 	if (!isHeadlessActive()) return
 	try {
-		const status = await api('GET', '/status')
+		const [status, queueRes] = await Promise.all([
+			api('GET', '/status'),
+			api('GET', '/queue').catch(() => ({ queue: null })),
+		])
 		if (status.track && status.songPos >= 0) {
 			const song = {
-				queue: null,
+				queue: queueRes.queue || null,
 				songInfo: status.track,
 				index: status.songPos,
 				actionEndOfSong: 'next',
