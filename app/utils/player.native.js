@@ -79,8 +79,8 @@ export const downloadNextSong = async (queue, currentIndex) => {
 	return getPlayer().downloadNextSong(queue, currentIndex)
 }
 
-export const playSong = async (config, songDispatch, queue, index, autoPlay = true) => {
-	await loadSong(config, queue, index, autoPlay)
+export const playSong = async (config, songDispatch, queue, index) => {
+	await loadSong(config, queue, index)
 	songDispatch({ type: 'setQueue', queue, index })
 	songDispatch({ type: 'setActionEndOfSong', action: 'next' })
 	saveQueue(config, queue, index)
@@ -120,8 +120,8 @@ export const setRepeat = async (songdispatch, action) => {
 	songdispatch({ type: 'setActionEndOfSong', action })
 }
 
-export const loadSong = async (config, queue, index, autoPlay = true) => {
-	return getPlayer().loadSong(config, queue, index, autoPlay)
+export const loadSong = async (config, queue, index) => {
+	return getPlayer().loadSong(config, queue, index)
 }
 
 export const unloadSong = async () => { }

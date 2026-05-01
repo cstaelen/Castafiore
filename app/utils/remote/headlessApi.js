@@ -10,7 +10,7 @@ export const configureBaseUrl = (fn) => {
 	getBaseUrl = fn
 }
 
-const isHeadlessActive = () => global.webPlayerType === 'headless'
+const isHeadlessActive = () => global.webPlayerType === 'headless' || global.playerType === 'headless'
 export const isMpdActive = (status) => status.state === 'play' || status.state === 'pause'
 
 const api = async (method, endpoint, body) => {
@@ -197,6 +197,8 @@ export const resetAudio = (songDispatch) => {
 }
 
 export const isVolumeSupported = () => true
+export const connect = async () => { }
+export const downloadNextSong = async () => { }
 export const disconnect = async () => {
 	prevState = null
 	await api('POST', '/stop').catch(() => { })
@@ -222,8 +224,10 @@ export default {
 	saveState,
 	resetAudio,
 	isVolumeSupported,
+	connect,
 	disconnect,
 	downloadSong,
+	downloadNextSong,
 	unloadSong,
 	tuktuktuk,
 	reload,

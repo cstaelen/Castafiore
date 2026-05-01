@@ -120,9 +120,8 @@ export const RemoteProvider = ({ children }) => {
 					await Player.switchPlayer('local')
 					await Player.connect(null, 'local')
 					if (hasSong(song)) {
-						await Player.playSong(config, songDispatch, song.queue, song.index, savedState?.isPlaying)
-						if (savedState?.isPlaying) await Player.restoreState(savedState)
-						songDispatch({ type: 'setState', state: savedState?.isPlaying ? State.Playing : State.Paused })
+						await Player.playSong(config, songDispatch, song.queue, song.index)
+						await Player.restoreState(savedState)
 					} else {
 						songDispatch({ type: 'reset' })
 					}

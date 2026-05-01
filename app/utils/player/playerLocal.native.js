@@ -176,9 +176,9 @@ const convertToTrack = async (track, config) => {
 	}
 }
 
-const loadSong = async (config, queue, index, autoPlay = true) => {
+const loadSong = async (config, queue, index) => {
 	await TrackPlayer.load(await convertToTrack(queue[index], config))
-	if (autoPlay) await TrackPlayer.play()
+	await TrackPlayer.play()
 }
 
 const setPosition = async (position) => {

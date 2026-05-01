@@ -22,5 +22,6 @@ export {
 	unloadSong,
 	tuktuktuk,
 	reload,
+	connect,
 	disconnect,
 } from '~/utils/remote/headlessApi'
