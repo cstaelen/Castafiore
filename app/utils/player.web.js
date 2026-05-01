@@ -2,7 +2,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import { nextRandomIndex, prevRandomIndex, saveQueue } from '~/utils/tools'
 import LocalPlayer from '~/utils/player/playerLocal'
 import * as HeadlessPlayer from '~/utils/player/playerHeadless'
-import { resetPollingState } from '~/utils/remote/headlessApi'
 import State from '~/utils/playerState'
 
 export const IS_DOCKER_HEADLESS = !!process.env.EXPO_PUBLIC_IS_HEADLESS
@@ -13,7 +12,6 @@ export const switchPlayer = async (type) => {
 	const prev = getPlayer()
 	global.webPlayerType = type
 	AsyncStorage.setItem('webPlayerType', type)
-	resetPollingState()
 	if (prev !== getPlayer()) await prev.disconnect?.()
 }
 
@@ -35,7 +33,11 @@ export const useEvent = (song, songDispatch) => {
 	HeadlessPlayer.useEvent(song, songDispatch, nextSong)
 }
 
-export const updateTime = () => getPlayer().updateTime()
+export const updateTime = () => {
+	const localTime = LocalPlayer.updateTime()
+	const headlessTime = HeadlessPlayer.updateTime()
+	return global.webPlayerType === 'headless' ? headlessTime : localTime
+}
 
 export const downloadSong = async (url, _id) => fetch(url)
 
@@ -91,7 +93,11 @@ export const setVolume = async (volume) => { return getPlayer().setVolume(volume
 
 export const getVolume = () => { return getPlayer().getVolume() }
 
-export const updateVolume = () => { return getPlayer().updateVolume() }
+export const updateVolume = () => {
+	const localVolume = LocalPlayer.updateVolume()
+	const headlessVolume = HeadlessPlayer.updateVolume()
+	return global.webPlayerType === 'headless' ? headlessVolume : localVolume
+}
 
 export const secondToTime = (second) => {
 	if (!second) return '00:00'
