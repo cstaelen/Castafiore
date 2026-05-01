@@ -38,6 +38,38 @@ const notifyVolume = (volume) => {
 	volumeListeners.forEach(fn => fn(volume))
 }
 
+const syncTrack = async (status, songDispatch) => {
+	if (status.songPos < 0 || status.track?.id === global.song.songInfo?.id) return
+	const queueRes = await api('GET', '/queue').catch(() => ({ queue: null }))
+	songDispatch({ type: 'restore', song: {
+		queue: queueRes.queue || null,
+		songInfo: status.track,
+		index: status.songPos,
+		actionEndOfSong: global.song.actionEndOfSong || 'next',
+		randomIndex: global.song.randomIndex || [],
+	}, isSongLoad: true })
+}
+
+const syncState = async (status, songDispatch, nextSong) => {
+	const state = status.state === 'play' ? State.Playing
+		: status.state === 'pause' ? State.Paused
+		: State.Stopped
+
+	if (state === prevState) return
+	const wasPlaying = prevState === State.Playing
+	prevState = state
+	songDispatch({ type: 'setState', state })
+
+	if (state === State.Stopped && wasPlaying) {
+		if (global.song?.actionEndOfSong === 'repeat') {
+			await api('POST', '/seek', { position: 0 })
+			await api('POST', '/resume')
+		} else {
+			nextSong(global.config, global.song, songDispatch)
+		}
+	}
+}
+
 const startPolling = (songDispatch, nextSong) => {
 	if (statusInterval) return
 	statusInterval = setInterval(async () => {
@@ -47,32 +79,11 @@ const startPolling = (songDispatch, nextSong) => {
 			notifyVolume(status.volume / 100)
 
 			if (!isHeadlessActive()) return
-
 			if (!global.song?.songInfo) return
-			const state = status.state === 'play' ? State.Playing
-				: status.state === 'pause' ? State.Paused
-				: State.Stopped
 
 			notifyProgress(status.elapsed || 0, status.duration || 0)
-
-			if (status.songPos >= 0 && global.song?.queue && status.songPos !== global.song.index) {
-				songDispatch({ type: 'setIndex', index: status.songPos })
-			}
-
-			if (state !== prevState) {
-				const wasPlaying = prevState === State.Playing
-				prevState = state
-				songDispatch({ type: 'setState', state })
-
-				if (state === State.Stopped && wasPlaying) {
-					if (global.song?.actionEndOfSong === 'repeat') {
-						await api('POST', '/seek', { position: 0 })
-						await api('POST', '/resume')
-					} else {
-						nextSong(global.config, global.song, songDispatch)
-					}
-				}
-			}
+			await syncTrack(status, songDispatch)
+			await syncState(status, songDispatch, nextSong)
 		} catch (e) {
 			logger.error('PlayerHeadless', e.message)
 		}
