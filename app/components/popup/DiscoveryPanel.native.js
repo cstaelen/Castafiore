@@ -15,6 +15,7 @@ import settingStyles from '~/styles/settings'
 import Player from '~/utils/player'
 import IconButton from '~/components/button/IconButton'
 import SlideBar from '~/components/button/SlideBar'
+import { HEADLESS_DEVICE } from '../../utils/remote/headlessApi'
 
 const DiscoveryPanel = ({ visible, onClose }) => {
 	const { t } = useTranslation()
@@ -141,8 +142,8 @@ const DiscoveryPanel = ({ visible, onClose }) => {
 								global.headlessUrl ? (
 									<SelectItem
 										text={t('Castafiore Connect')}
-										icon="headphones"
-										onPress={() => connect({ id: 'castafiore-connect', name: 'Castafiore Connect', type: 'headless' })}
+										icon="volume-up"
+										onPress={() => connect(HEADLESS_DEVICE)}
 										isSelect={remote.selectedDevice?.type === 'headless'}
 									/>
 								) : null
