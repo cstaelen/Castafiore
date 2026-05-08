@@ -1,5 +1,6 @@
 import { nextRandomIndex, prevRandomIndex, saveQueue } from '~/utils/tools'
 import CastPlayer from '~/utils/player/playerCast'
+import * as HeadlessPlayer from '~/utils/player/playerHeadless'
 import LocalPlayer from '~/utils/player/playerLocal'
 import State from '~/utils/playerState'
 import UpnpPlayer from '~/utils/player/playerUpnp'
@@ -12,6 +13,7 @@ const getPlayer = (forceType = null) => {
 	if (deviceType === 'local') return LocalPlayer
 	else if (deviceType === 'chromecast') return CastPlayer
 	else if (deviceType === 'upnp') return UpnpPlayer
+	else if (deviceType === 'headless') return HeadlessPlayer
 	return null
 }
 
@@ -21,12 +23,14 @@ export const initPlayer = async (songDispatch) => {
 	await LocalPlayer.initPlayer(songDispatch)
 	await UpnpPlayer.initPlayer(songDispatch)
 	await CastPlayer.initPlayer(songDispatch)
+	await HeadlessPlayer.initPlayer(songDispatch)
 }
 
 export const useEvent = (song, songDispatch) => {
 	LocalPlayer.useEvent(song, songDispatch, nextSong)
 	CastPlayer.useEvent(song, songDispatch, nextSong)
 	UpnpPlayer.useEvent(song, songDispatch, nextSong)
+	HeadlessPlayer.useEvent(song, songDispatch, nextSong)
 }
 
 export const previousSong = async (config, song, songDispatch) => {
@@ -132,19 +136,26 @@ export const setIndex = async (config, songDispatch, queue, index) => {
 	}
 }
 
-export const updateVolume = () => { }
+export const updateVolume = () => {
+	const headlessVolume = HeadlessPlayer.updateVolume()
+	if (type === 'headless') return headlessVolume
+	return undefined
+}
+
 export const updateTime = () => {
 	const localTime = LocalPlayer.updateTime()
 	const upnpTime = UpnpPlayer.updateTime()
 	const chromecastTime = CastPlayer.updateTime()
+	const headlessTime = HeadlessPlayer.updateTime()
 
 	if (type === 'chromecast') return chromecastTime
 	else if (type === 'upnp') return upnpTime
+	else if (type === 'headless') return headlessTime
 	return localTime
 }
 
 export const isVolumeSupported = () => {
-	return false
+	return getPlayer()?.isVolumeSupported?.() ?? false
 }
 
 export const resetAudio = (songDispatch) => {
@@ -170,6 +181,7 @@ export const disconnect = async (device) => {
 
 export const switchPlayer = async (newType) => {
 	type = newType
+	global.playerType = newType
 }
 
 export const saveState = async () => {
@@ -207,6 +219,7 @@ export default {
 	removeFromQueue,
 	addToQueue,
 	setIndex,
+	loadSong,
 	restoreState,
 	saveState,
 	connect,
